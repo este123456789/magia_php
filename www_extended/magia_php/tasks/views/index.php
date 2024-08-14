@@ -1,26 +1,33 @@
 <?php include view("home", "header"); ?>  
 
-<?php include "nav.php"; ?>
+<div class="row">
+    <div class="col-sm-12 col-md-2 col-lg-2">
+        <?php // include view("services", "izq"); ?>
+    </div>
 
-<p>
-    <a href="index.php?c=user_options&a=ok_push&option=tasks_index_tmp&data=th&redi[redi]=5&redi[c]=tasks&redi[a]=index"><?php echo icon('th-large'); ?></a>
-    <a href="index.php?c=user_options&a=ok_push&option=tasks_index_tmp&data=list&redi[redi]=5&redi[c]=tasks&redi[a]=index"><?php echo icon('th-list'); ?></a>
-</p>
+    <div class="col-sm-12 col-md-10 col-lg-10">
 
-<?php
-//vardump(user_options('tasks_index_tmp')); 
+        <?php include view("services", "nav"); ?>
 
-switch (user_options('tasks_index_tmp')) {
-    case 'list':
-        include "index_list.php";
-        break;
+        <h1>Titulo de task</h1>
 
-    default:
-        include "table_index.php";
-        break;
-}
-?>
+        <?php
+        if ($_REQUEST) {
+            foreach ($error as $key => $value) {
+                message("info", "$value");
+            }
+        }
+        ?>
+        <?php
+        if ($services) {
+            include view("services", "table_index");
+        } else {
+            message("info", "No items");
+        }
+        ?>
+    </div>
 
+
+</div>
 
 <?php include view("home", "footer"); ?> 
-

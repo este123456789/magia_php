@@ -1,1 +1,7 @@
-<?php echo _t("hola para todos");?>
+<?php
+
+// header(""); 
+
+// json
+
+

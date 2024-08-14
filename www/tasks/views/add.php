@@ -5,6 +5,7 @@
 <?php include view("home", "header"); ?>  
 
 <div class="row">
+    
     <div class="col-xs-12 col-sm-12 col-md-2 col-lg-2">
         <?php include view("tasks", "izq_add"); ?></div>
 
@@ -13,6 +14,12 @@
             <?php _menu_icon("top", 'tasks'); ?> 
             <?php _t("Add tasks"); ?>
         </h1>
+
+
+        <h2>Trabajar</h2>
+
+
+
         <?php include view("tasks", "form_add", $arg = ["redi" => 1]); ?>
     </div>
 

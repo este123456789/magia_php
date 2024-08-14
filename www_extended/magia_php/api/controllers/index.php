@@ -1,81 +1,57 @@
 <?php
 
-// read the blog 
-// Blog
-// https://blog.factuz.com/index.php?c=public_html&a=details&id=15
-define("API_URL", "");
-// c = api & a = invoices & api_key = demo & function = list
-// c = api & a = invoices & function = details & id = 10
-// 
-$function = (isset($_GET["function"])) ? clean($_GET["function"]) : null;
-// api_ke que se le da al usuario
-//
-$api_key = (isset($_GET["api_key"])) ? clean($_GET["api_key"]) : null;
-// para registrar los errores
-//
-$error = array();
-//
-##########################################################################
-# MANDATORY
-# Aca se controlla las variables obligatorias son enviadas
-if ($api_key == "" || $api_key == null || $api_key == false) {
-    array_push($error, "api_key is manatory");
-}
-//
-###########################################################################
-# FORMAT
-# Aca controlamos el formato de las variables enviadas por el usuario
-# si no es formato adecuado da error 
-# 
-##########################################################################
-# CONDICIONES
-# Aca verificamos las condiciones de control de las variables 
-// La api_key es valida ? 
-// puede hacer u crud ?
-// Limite de request?
-// No es mandatory pero si no manda la funcion mostramos todas las funciones disponibles
-if ($function == "" || $function == null || $function == false) {
-    //array_push($error, "function is manatory");
-    $function = "functions_list";
-}
-////////////////////////////////////////////////////////////////////////////////
-$function_list = array(
-    "functions_list", // lista de todas las funciones disponibles
-    "add",
-    "details",
-    "update",
-    "delete",
-    "push",
-    "search",
-);
-//
-if (!in_array($function, $function_list)) {
-    array_push($error, "function name incorrect");
-}
-################################################################################
-################################################################################
-################################################################################
+// c=api
+// &
+// api_key=demo
+// &
+// a=_translations
+// &
+// function
+// =
 
-$content = (isset($_GET["content"])) ? clean($_GET["content"]) : null;
-$language = (isset($_GET["language"])) ? clean($_GET["language"]) : null;
+// functions_list
 
 
-################################################################################
-################################################################################
-################################################################################
-if (!$error) {
-    $json = json_encode($data, JSON_PRETTY_PRINT);
-} else {
-    $json = json_encode($error, JSON_PRETTY_PRINT);
-}
-################################################################################
-################################################################################
-################################################################################
+
+// $nombres = array(
+//     "nombre"=>'Andres',
+//     "Apellido"=>"Salzs" ,
+//     "Tel"=>"12345687457"
+
+// ); 
+
+// _t('Infffffvoices');
+// echo _tr('Invoices');
+
+// function  api_search_translations($franse, $content, $contexto ){
+//     // Busca la traduction en la tabla tanslations
+
+// }
+
+//function  api_tr(); 
+
+/**
+ * Sistema para actualizar las traducciones de un sistema Master a un sistema cliente
+ * http://localhost/magia_php (master)
+ * 
+ * git clone https://github.com/estaba/magiaphp.php cliente
+ * 
+ * http://localhost/cliente (cliente 1)
+ * http://localhost/ana (cliente 2)
+ * 
+ * 
+ * Master tien las traduction 
+ * clientes buscan y actualizan su DB
+ * 
+ * 
+ */
 
 
-function api_extract_quoted_text($input) {
-    if (preg_match('/"([^"]+)"/', $input, $matches)) {
-        return $matches[1];
+
+ function api_extract_quoted_text($input) {
+
+     if (preg_match('/"([^"]+)"/', $input, $matches)) {
+         return $matches[1];
     }
     return null;
 }
@@ -196,10 +172,14 @@ function api_translations_search_by_content($content) {
         'function' => $_GET['function'] ?? 'search',
         'content' => $content,
     ];
+
     $query_string = http_build_query($params);
+    var_dump($query_string);
     $url = $base_url . '?' . $query_string;
 
     $response = api_curl_request($url, 0, $attempts);
+
+
 
     if (api_extract_quoted_text($response) === 'Not find') {
         $source = 'es';
@@ -262,7 +242,108 @@ if ($content) {
 }
 
 
+function api_search_word_in_table($content){
+    global $db;
+    
+    $sql = "SELECT * FROM _content WHERE frase LIKE '%".$content."%'";
+
+    $query = $db->prepare($sql);
+    $query->execute();
+    $data = $query->fetchAll();
+
+    return json_encode($data);
 
 
-################################################################################
-include view('api', '_translations');
+}
+function api_search_word_in_table_translations($content){
+    global $db;
+    
+    $sql = "SELECT * FROM _translations WHERE content LIKE '%".$content."%'";
+
+    $query = $db->prepare($sql);
+    $query->execute();
+    $data = $query->fetchAll();
+
+    return json_encode($data);
+
+
+}
+
+
+
+function api_is_word_save($word,$resp_translate){
+    global $db;
+
+    $u_id = ( isset($_SESSION['u_id']) ) ? $_SESSION['u_id'] : false;
+    $u_language =  users_field_contact_id('language', $u_id);
+    $u_lang = explode('_',$u_language);
+    $language = (isset($_GET['language']) && empty($_GET['language']) ) ? clean($_GET['language']) : strtolower($u_lang[1]);
+
+    try {
+        $sql = "SELECT id, content, language, translation 
+                FROM `_translations` 
+                WHERE `content` = :content 
+                ORDER BY id DESC LIMIT 1";
+        $query = $db->prepare($sql);
+        $query->bindValue(':content', $word, PDO::PARAM_STR);
+        $query->execute();
+        $data = $query->fetchAll();
+
+        if (empty($data)) {
+            $parts = explode('_', $language);
+            $lang = $parts[0] ?? '';
+
+            $sql_check = "SELECT * FROM _content WHERE frase LIKE :word";
+            $query_check = $db->prepare($sql_check);
+            $query_check->bindValue(':word', '%' . $word . '%', PDO::PARAM_STR);
+            $query_check->execute();
+            $data_content = $query_check->fetchAll();
+
+            if (empty($data_content)) {
+                $sql_insert_content = "INSERT INTO _content (id, frase, contexto) VALUES (NULL, :word, NULL)";
+                $query_insert_content = $db->prepare($sql_insert_content);
+                $query_insert_content->bindValue(':word', $word, PDO::PARAM_STR);
+                $query_insert_content->execute();
+            }
+
+            $sql_insert = "INSERT INTO _translations (id, content, language, translation) VALUES (NULL, :word, :language, :translation)";
+            $query = $db->prepare($sql_insert);
+            $query->bindValue(':word', $word, PDO::PARAM_STR);
+            $query->bindValue(':language', $language, PDO::PARAM_STR);
+            $query->bindValue(':translation', $resp_translate, PDO::PARAM_STR);
+            $query->execute();
+        }
+    } catch (PDOException $e) {
+        echo 'Database error: ' . $e->getMessage();
+        return null;
+    }
+}
+
+
+function api_search_word_on_service($word){
+    global $db;
+    $source = 'es';
+    $u_id = ( isset($_SESSION['u_id']) ) ? $_SESSION['u_id'] : false;
+    $u_language = users_field_contact_id('language', $u_id);
+
+
+    
+    $u_id = ( isset($_SESSION['u_id']) ) ? $_SESSION['u_id'] : false;
+    $u_language =  users_field_contact_id('language', $u_id);
+    $u_lang = explode('_',$u_language);
+    $target = (isset($_GET['language']) && empty($_GET['language']) ) ? clean($_GET['language']) : strtolower($u_lang[1]);
+
+   
+    
+    $attempts = 5;
+
+    $resp_translate = api_translate($source, $target, $word, $attempts);
+    $is_word_translate  = api_is_word_save($word,$resp_translate);
+     
+}
+
+
+
+
+
+include view("api", "index"); 

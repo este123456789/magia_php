@@ -12,8 +12,8 @@ $debug = false;
 $config_server = "localhost";
 //$config_db = "factuxorg_demo";
 $config_db = "magia";
-$config_login = "root";
-$config_pass = "root";
+$config_login = "demo";
+$config_pass = "demo";
 //$config_theme = "default";
 $config_theme = "magia_php";
 // 123-123
